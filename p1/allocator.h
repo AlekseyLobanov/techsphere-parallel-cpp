@@ -1,5 +1,14 @@
+#ifndef ALLOCATOR_H
+#define ALLOCATOR_H
+
+#include <tuple>
 #include <stdexcept>
 #include <string>
+#include <vector>
+#include <map>
+#include <set>
+#include <iostream>
+
 
 enum class AllocErrorType {
     InvalidFree,
@@ -23,18 +32,39 @@ class Allocator;
 
 class Pointer {
 public:
-    void *get() const { return 0; } 
+    Pointer() : _pos(nullptr) {
+        Pointer::_pointers.insert(this);
+    }
+    Pointer(Pointer const& p): _pos(p._pos) {
+        Pointer::_pointers.insert(this);
+    }
+
+    ~Pointer() {
+        Pointer::_pointers.erase(this);
+    }
+    void *get() const { return _pos; } 
+    friend Allocator;
+private:
+    void *_pos;
+    static std::set<Pointer*> _pointers;
 };
+
 
 class Allocator {
 public:
-    Allocator(void *base, size_t size) {}
+    Allocator(void *base, size_t size);
     
-    Pointer alloc(size_t N) { return Pointer(); }
-    void realloc(Pointer &p, size_t N) {}
-    void free(Pointer &p) {}
+    Pointer alloc(size_t N);
+    void realloc(Pointer &p, size_t N);
+    void free(Pointer &p);
 
-    void defrag() {}
-    std::string dump() { return ""; }
+    void defrag();
+    std::string dump() { return ""; }    
+private:
+    void                    *_base;
+    size_t                   _size;
+    std::vector<bool>        _used;
+    std::map<size_t,size_t>  _alloced;
 };
 
+#endif // ALLOCATOR_H
